@@ -8,7 +8,7 @@ url="https://github.com/SpotComms/GiveawayPwner"
 license=('MIT')
 depends=('java-runtime>=8')
 source=($url/releases/download/$pkgver/$pkgname.jar $pkgname.desktop $pkgname.png)
-md5sums=('5aabfa3a27c4b90cf022e7ec9b9669e7' '417637c15be3f38692f633475b3a86ba' '888fb4ba34e5ad687ff1e21e237f3675')
+md5sums=('535d8f903217956f72d0288902a80ea5' '00a1b2a4d06e32ca95e19f042e55dce9' 'd52b8de7f3a0deb1794247fe20dda10a')
 
 build() {
   /bin/true
