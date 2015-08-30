@@ -18,3 +18,4 @@ Planned Updates
 Credits
 -------
 - Icon: ic8.link/6007
+- http://stackoverflow.com/a/8545681

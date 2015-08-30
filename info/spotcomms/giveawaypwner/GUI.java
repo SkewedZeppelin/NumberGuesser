@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -42,6 +43,9 @@ public class GUI extends JFrame implements ActionListener {
     private JPanel panPRNG;
     private JRadioButton radRandom;
     private JRadioButton radSecureRandom;
+    private JPanel panMode;
+    private JRadioButton radPopular;
+    private JRadioButton radAverage;
 
     public GUI() {
         String os = getOS();
@@ -64,15 +68,27 @@ public class GUI extends JFrame implements ActionListener {
         setVisible(true);
         radRandom.addActionListener(this);
         radSecureRandom.addActionListener(this);
+        radPopular.addActionListener(this);
+        radAverage.addActionListener(this);
         btnRun.addActionListener(this);
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == radRandom) {
+            radRandom.setSelected(true);
             radSecureRandom.setSelected(false);
         }
         if (e.getSource() == radSecureRandom) {
+            radSecureRandom.setSelected(true);
             radRandom.setSelected(false);
+        }
+        if (e.getSource() == radPopular) {
+            radPopular.setSelected(true);
+            radAverage.setSelected(false);
+        }
+        if (e.getSource() == radAverage) {
+            radAverage.setSelected(true);
+            radPopular.setSelected(false);
         }
         if (e.getSource() == btnRun) {
             if (threadRunning) {
@@ -88,7 +104,7 @@ public class GUI extends JFrame implements ActionListener {
                 pwner = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        pwner(Integer.valueOf(txtMaxNum.getText()), Integer.valueOf(txtRuns.getText()), Integer.valueOf(txtMaxSubRuns.getText()), radRandom.isSelected());
+                        pwner(Integer.valueOf(txtMaxNum.getText()), Integer.valueOf(txtRuns.getText()), Integer.valueOf(txtMaxSubRuns.getText()), radRandom.isSelected(), radPopular.isSelected());
                         threadRunning = false;
                         btnRun.setText("Start");
                     }
@@ -99,9 +115,8 @@ public class GUI extends JFrame implements ActionListener {
         }
     }
 
-    private void pwner(int top, int runs, int subRunCap, boolean fast) {
+    private void pwner(int top, int runs, int subRunCap, boolean fast, boolean mode) {
         running = true;
-        int[] averages = new int[runs];
         int subRuns = subRunCap;
         if (top * 5 <= subRunCap) {
             subRuns = top * 5;
@@ -118,34 +133,88 @@ public class GUI extends JFrame implements ActionListener {
         } else {
             updateRate = 10000;
         }
-        for (int y = 0; y < runs; y++) {
-            int[] nums = new int[subRuns];
-            for (int x = 0; x < subRuns; x++) {
-                if (fast) {
-                    nums[x] = ThreadLocalRandom.current().nextInt(1, top);//Faster but not "CS"
-                } else {
-                    random.setSeed(System.nanoTime());
-                    nums[x] = random.nextInt(top);
+        if (mode) {
+            int[] nums = new int[runs * subRuns];
+            int c = 0;
+            for (int y = 0; y < runs; y++) {
+                for (int x = 0; x < subRuns; x++) {
+                    if (fast) {
+                        nums[c] = ThreadLocalRandom.current().nextInt(1, top);//Faster but not "CS"
+                    } else {
+                        random.setSeed(System.nanoTime());
+                        nums[c] = random.nextInt(top);
+                    }
+                    if (x % updateRate == 0) {
+                        lblStatus.setText("Currently Running, Run: " + y + ", Sub Run: " + x);
+                        if (x % 100000 == 0) {
+                            pack();
+                        }
+                    }
+                    c++;
                 }
-                if (x % updateRate == 0) {
-                    lblStatus.setText("Currently Running, Run: " + y + ", Sub Run: " + x);
-                    if (x % 100000 == 0) {
-                        pack();
+            }
+            running = false;
+            lblStatus.setText("Processing...");
+            lblStatus.setText("Finished, Result: " + findPopular(nums));
+        } else {
+            int[] averages = new int[runs];
+            for (int y = 0; y < runs; y++) {
+                int[] nums = new int[subRuns];
+                for (int x = 0; x < subRuns; x++) {
+                    if (fast) {
+                        nums[x] = ThreadLocalRandom.current().nextInt(1, top);//Faster but not "CS"
+                    } else {
+                        random.setSeed(System.nanoTime());
+                        nums[x] = random.nextInt(top);
+                    }
+                    if (x % updateRate == 0) {
+                        lblStatus.setText("Currently Running, Run: " + y + ", Sub Run: " + x);
+                        if (x % 100000 == 0) {
+                            pack();
+                        }
                     }
                 }
+                BigInteger total = new BigInteger("0");
+                for (int num : nums) {
+                    total = total.add(new BigInteger(num + ""));
+                }
+                averages[y] = Integer.valueOf(total.divide(new BigInteger(nums.length + "")) + "");
             }
+            running = false;
+            lblStatus.setText("Processing...");
             BigInteger total = new BigInteger("0");
-            for (int num : nums) {
-                total = total.add(new BigInteger(num + ""));
+            for (int average : averages) {
+                total = total.add(new BigInteger(average + ""));
             }
-            averages[y] = Integer.valueOf(total.divide(new BigInteger(nums.length + "")) + "");
+            lblStatus.setText("Finished, Result: " + Integer.valueOf(total.divide(new BigInteger(averages.length + "")) + ""));
         }
-        BigInteger total = new BigInteger("0");
-        for (int average : averages) {
-            total = total.add(new BigInteger(average + ""));
+
+    }
+
+    //Credit: http://stackoverflow.com/a/8545681
+    public int findPopular(int[] a) {
+        if (a == null || a.length == 0) {
+            System.out.println("ARRAY IS NULL!");
+            return 0;
         }
-        running = false;
-        lblStatus.setText("Finished, Result: " + Integer.valueOf(total.divide(new BigInteger(averages.length + "")) + ""));
+        Arrays.sort(a);
+        int previous = a[0];
+        int popular = a[0];
+        int count = 1;
+        int maxCount = 1;
+        for (int i = 1; i < a.length; i++) {
+            if (a[i] == previous) {
+                count++;
+            } else {
+                if (count > maxCount) {
+                    popular = a[i - 1];
+                    maxCount = count;
+                }
+                previous = a[i];
+                count = 1;
+            }
+        }
+        return count > maxCount ? a[a.length - 1] : popular;
     }
 
     public String getOS() {
@@ -213,12 +282,12 @@ public class GUI extends JFrame implements ActionListener {
         lblStatus.setText("Idle");
         panRun.add(lblStatus, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panMiscOptions = new JPanel();
-        panMiscOptions.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panMiscOptions.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panContent.add(panMiscOptions, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panMiscOptions.setBorder(BorderFactory.createTitledBorder(null, "Misc Options", TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
         panPRNG = new JPanel();
         panPRNG.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panMiscOptions.add(panPRNG, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panMiscOptions.add(panPRNG, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panPRNG.setBorder(BorderFactory.createTitledBorder("Random Number Generation"));
         radRandom = new JRadioButton();
         radRandom.setSelected(true);
@@ -228,6 +297,17 @@ public class GUI extends JFrame implements ActionListener {
         radSecureRandom.setText("Secure Random");
         radSecureRandom.setToolTipText("");
         panPRNG.add(radSecureRandom, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panMode = new JPanel();
+        panMode.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panMiscOptions.add(panMode, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panMode.setBorder(BorderFactory.createTitledBorder("Mode"));
+        radPopular = new JRadioButton();
+        radPopular.setSelected(true);
+        radPopular.setText("Most Popular");
+        panMode.add(radPopular, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        radAverage = new JRadioButton();
+        radAverage.setText("Average");
+        panMode.add(radAverage, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         lblMaxNum.setLabelFor(txtMaxNum);
         lblRuns.setLabelFor(txtRuns);
         lblMaxSubRuns.setLabelFor(txtMaxSubRuns);
