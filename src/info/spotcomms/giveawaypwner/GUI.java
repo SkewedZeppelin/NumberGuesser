@@ -24,7 +24,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GUI extends JFrame implements ActionListener {
 
     private SecureRandom random = null;
-    private boolean running = false;
     private boolean threadRunning = false;
     private Thread pwner = null;
 
@@ -101,13 +100,10 @@ public class GUI extends JFrame implements ActionListener {
                 threadRunning = true;
                 btnRun.setText("Stop");
                 lblStatus.setText("Preparing...");
-                pwner = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        pwner(Integer.valueOf(txtMaxNum.getText()), Integer.valueOf(txtRuns.getText()), Integer.valueOf(txtMaxSubRuns.getText()), radRandom.isSelected(), radPopular.isSelected());
-                        threadRunning = false;
-                        btnRun.setText("Start");
-                    }
+                pwner = new Thread(() -> {
+                    pwner(Integer.valueOf(txtMaxNum.getText()), Integer.valueOf(txtRuns.getText()), Integer.valueOf(txtMaxSubRuns.getText()), radRandom.isSelected(), radPopular.isSelected());
+                    threadRunning = false;
+                    btnRun.setText("Start");
                 });
                 pwner.setName("GiveawayPwner: Pwner");
                 pwner.start();
@@ -116,7 +112,7 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void pwner(int top, int runs, int subRunCap, boolean fast, boolean mode) {
-        running = true;
+        boolean running = true;
         int subRuns = subRunCap;
         if (top * 5 <= subRunCap) {
             subRuns = top * 5;
@@ -192,7 +188,7 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     //Credit: http://stackoverflow.com/a/8545681
-    public int findPopular(int[] a) {
+    private int findPopular(int[] a) {
         if (a == null || a.length == 0) {
             System.out.println("ARRAY IS NULL!");
             return 0;
@@ -217,7 +213,7 @@ public class GUI extends JFrame implements ActionListener {
         return count > maxCount ? a[a.length - 1] : popular;
     }
 
-    public String getOS() {
+    private String getOS() {
         try {
             String os = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
             if (os.contains("linux"))
