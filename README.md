@@ -17,5 +17,5 @@ Planned Updates
 
 Credits
 -------
-- Icon: ic8.link/6007
-- http://stackoverflow.com/a/8545681
+- Icon: https://icons8.com/icon/84873/gift
+- (CC BY-SA 3.0) https://stackoverflow.com/a/8545681

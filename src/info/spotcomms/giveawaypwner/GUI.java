@@ -200,7 +200,7 @@ public class GUI extends JFrame implements ActionListener {
 
     }
 
-    //Credit: http://stackoverflow.com/a/8545681
+    //Credit (CC BY-SA 3.0): https://stackoverflow.com/a/8545681
     private int findPopular(int[] a) {
         if (a == null || a.length == 0) {
             System.out.println("ARRAY IS NULL!");
