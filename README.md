@@ -19,3 +19,7 @@ Credits
 -------
 - Icon: https://icons8.com/icon/84873/gift
 - (CC BY-SA 3.0) https://stackoverflow.com/a/8545681
+
+Donate
+-------
+BTC: bc1qkjtp2k7cc4kuv8k9wjdlxkeuqczenrpv5mwasl
