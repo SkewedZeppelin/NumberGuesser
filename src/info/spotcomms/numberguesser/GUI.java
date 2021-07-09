@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package info.spotcomms.giveawaypwner;
+package info.spotcomms.numberguesser;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -72,7 +72,7 @@ public class GUI extends JFrame implements ActionListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        setTitle("Giveaway Pwner");
+        setTitle("Number Guesser");
         setLocation(150, 150);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setContentPane(panContent);
@@ -118,7 +118,7 @@ public class GUI extends JFrame implements ActionListener {
                     threadRunning = false;
                     btnRun.setText("Start");
                 });
-                pwner.setName("GiveawayPwner: Pwner");
+                pwner.setName("NumberGuesser: Guesser");
                 pwner.start();
             }
         }
